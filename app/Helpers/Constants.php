@@ -23,4 +23,9 @@ abstract class Constants
     public const USER_EXISTS = 'User already exists.';
     public const SUCCESS_REGISTER = 'Registration done successfully.';
     public const ERROR_INVALID_LOGIN = 'Invalid email or password';
+
+    /**
+     * Drug search related
+     */
+    public const ERROR_DRUG_NAME_REQUIRED = 'Drug name is required.';
 }

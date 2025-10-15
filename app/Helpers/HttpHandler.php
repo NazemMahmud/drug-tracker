@@ -72,9 +72,14 @@ final class HttpHandler
         ], $statusCode);
     }
 
-    public static function errorLogHandler(string $message, int $statusCode = JsonResponse::HTTP_BAD_REQUEST): void
+    public static function errorLogMessageHandler(string $message, int $statusCode = JsonResponse::HTTP_BAD_REQUEST): void
     {
         Log::error("Message: $message, Status Code: $statusCode");
+    }
+
+    public static function errorHandler(string $message, array $data = []): void
+    {
+        Log::error("$message: ", $data);
     }
 
 }

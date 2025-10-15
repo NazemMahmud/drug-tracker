@@ -25,7 +25,7 @@ class AuthService
             $response       = $this->authRepository->create($data->toArray());
             return $response;
         } catch (Exception $ex) {
-            HttpHandler::errorLogHandler(Constants::ERROR_REGISTER. " : " . $ex->getMessage(), $ex->getCode());
+            HttpHandler::errorLogMessageHandler(Constants::ERROR_REGISTER. " : " . $ex->getMessage(), $ex->getCode());
             throw new Exception(Constants::ERROR_REGISTER, JsonResponse::HTTP_BAD_REQUEST);
         }
     }
@@ -35,7 +35,7 @@ class AuthService
         try {
             return $this->authRepository->existsBy(['email' => $email]);
         } catch (Exception $ex) {
-            HttpHandler::errorLogHandler(Constants::ERROR_DB. " : " . $ex->getMessage(), $ex->getCode());
+            HttpHandler::errorLogMessageHandler(Constants::ERROR_DB. " : " . $ex->getMessage(), $ex->getCode());
             throw new Exception(Constants::ERROR_DB, JsonResponse::HTTP_BAD_REQUEST);
         }
     }
