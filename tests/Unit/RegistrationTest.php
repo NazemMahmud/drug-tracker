@@ -3,14 +3,14 @@
 namespace Tests\Unit;
 
 use App\Helpers\Constants;
-use App\Models\User;
 
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
+
     /** API URL for registration */
     private string $registrationUrl;
 
@@ -56,7 +56,7 @@ class RegistrationTest extends TestCase
         $this->validUserData = [
             'name'     => 'John Doe',
             'email'    => 'john@email.com',
-            'password' => Hash::make('password123')
+            'password' => 'password123'
         ];
     }
 
@@ -105,6 +105,8 @@ class RegistrationTest extends TestCase
      */
     public function test_success_registration(): void
     {
+        User::where('email', $this->validUserData['email'])->delete();
+
         $response = $this->postJson($this->registrationUrl, $this->validUserData);
         $response->assertStatus(JsonResponse::HTTP_CREATED)
             ->assertJsonStructure([

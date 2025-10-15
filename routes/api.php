@@ -22,3 +22,4 @@ Route::get('/health', function () {
 });
 
 Route::post('register', [AuthController::class, 'registration'])->name('register');
+Route::post('login', [AuthController::class, 'login'])->name('login');

@@ -22,4 +22,5 @@ abstract class Constants
     public const ERROR_REGISTER = 'Registration failed';
     public const USER_EXISTS = 'User already exists.';
     public const SUCCESS_REGISTER = 'Registration done successfully.';
+    public const ERROR_INVALID_LOGIN = 'Invalid email or password';
 }
