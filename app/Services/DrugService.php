@@ -12,11 +12,11 @@ use Exception;
 
 class DrugService
 {
-    protected int $timeout = 100;
+    protected static int $timeout = 100;
     protected string $tty  = 'SBD';
 
-    protected string $getDrugsURL       = 'https://rxnav.nlm.nih.gov/REST/drugs.json?name=%s';
-    protected string $getDrugDetailsURL = "https://rxnav.nlm.nih.gov/REST/rxcui/%s/historystatus.json";
+    protected CONST GET_DRUGS_URL        = 'https://rxnav.nlm.nih.gov/REST/drugs.json?name=%s';
+    protected const GET_DRUG_DETAILS_URL = "https://rxnav.nlm.nih.gov/REST/rxcui/%s/historystatus.json";
 
 
     /**
@@ -56,8 +56,8 @@ class DrugService
     public function getDrugs(string $drugName): array
     {
         try {
-            $url = sprintf($this->getDrugsURL, $drugName);
-            $response = Http::timeout(10)->get($url);
+            $url = sprintf(self::GET_DRUGS_URL, $drugName);
+            $response = Http::timeout(self::$timeout)->get($url);
 
             if (!$response->successful()) {
                 throw new Exception("API request failed with status: " . $response->status());
@@ -106,27 +106,27 @@ class DrugService
             return [];
         }
 
-        $result    = [];
-        $responses = Http::pool(function ($pool) use ($drugData) {
-            $promises = [];
-            foreach ($drugData as $index => $drug) {
-                $url = sprintf($this->getDrugDetailsURL, $drug['rxcui']);
-                $promises[$index] = $pool->get($url);
-            }
-            return $promises;
-        });
+        $details = $this->fetchDrugDetailsPool($drugData);
+        $result  = $this->filterDrugDetailsData($details, $drugData, $drugName);
 
+        return $result;
+    }
+
+    public function filterDrugDetailsData(array $responses, array $drugData, string $drugName = ''): array
+    {
+        $result = [];
+//        Rx ID, Drug name, baseNames (ingredientAndStrength), doseFormGroupName (doseFormGroupConcept).
         foreach ($responses as $index => $response) {
             $drug = $drugData[$index];
             $rxcui = $drug['rxcui'];
 
             if ($response->successful()) {
                 $details = $response->json();
-
+                // todo: have some queries, after that will reformat again
                 $result[] = [
                     'rxcui'                 => $rxcui,
-                    'name'                  => $drug['name'],
-                    'drug_name'             => $drugName,
+                    'name'                  => $drug['name'] ?? data_get($details, 'rxcuiStatusHistory.attributes.name', ''),
+                    'drug_name'             => $drugName, //
                     'base_names'            => $this->extractBaseNames($details),
                     'dose_form_group_names' => $this->extractDoseFormGroups($details),
                 ];
@@ -142,6 +142,27 @@ class DrugService
         }
 
         return $result;
+    }
+
+    public function fetchDrugDetailsPool(array $rxcuiList): array
+    {
+        if (empty($rxcuiList)) {
+            return [];
+        }
+
+        /**
+         * i need array of [rxcui]
+         */
+        $responses = Http::pool(function ($pool) use ($rxcuiList) {
+            $promises = [];
+            foreach ($rxcuiList as $index => $drug) {
+                $url = sprintf(self::GET_DRUG_DETAILS_URL, $drug['rxcui'] ?? '');
+                $promises[$index] = $pool->get($url);
+            }
+            return $promises;
+        });
+
+        return $responses;
     }
 
     private function extractBaseNames(array $details): array
@@ -174,5 +195,29 @@ class DrugService
                 )
             )
         );
+    }
+
+    public static function isValidRxcui(string $rxcui): bool
+    {
+        if (empty($rxcui)) {
+            return false;
+        }
+
+        try {
+            $url = sprintf(self::GET_DRUG_DETAILS_URL, $rxcui);
+            $response = Http::timeout(self::$timeout)->get($url);
+
+            if (!$response->successful()) {
+                return false;
+            }
+        } catch (Exception $ex) {
+            HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
+            return false;
+        }
+
+        $data       = $response->json();
+        $validRxcui = data_get($data, 'rxcuiStatusHistory.attributes.rxcui', '');
+
+        return $rxcui === $validRxcui;
     }
 }

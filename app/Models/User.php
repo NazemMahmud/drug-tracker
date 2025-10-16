@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -64,5 +65,11 @@ class User extends Authenticatable implements JWTSubject
                 'email' => $this->email
             ]
         ];
+    }
+
+
+    public function drugs(): HasMany
+    {
+        return $this->hasMany(UsersDrug::class);
     }
 }

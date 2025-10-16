@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\{ AuthController, DrugsController };
+use App\Http\Controllers\{ AuthController, DrugsController, UsersDrugController };
+use App\Http\Middleware\JWTMiddleware;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,15 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::post('register', [AuthController::class, 'registration'])->name('register');
-Route::post('login', [AuthController::class, 'login'])->name('login');
+Route::post('register', [AuthController::class, 'registration']);
+Route::post('login', [AuthController::class, 'login']);
 
-Route::get('drug-search', [DrugsController::class, 'searchDrugs'])->name('drug-search');
+Route::get('drug-search', [DrugsController::class, 'searchDrugs']);
+
+Route::middleware([JWTMiddleware::class])->prefix('user')->group(function () {
+    Route::controller(UsersDrugController::class)->prefix('drugs')->group(function () {
+        Route::post('/', 'store');
+        Route::get('/', 'index');
+        Route::delete('/{rxcui}', 'destroy');
+    });
+});
