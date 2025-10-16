@@ -23,11 +23,6 @@ class UsersDrugService
 
     public function addDrug(int $userId, string $rxcui): ?Model
     {
-        $isValidRxcui = DrugService::isValidRxcui($rxcui);
-        if (!$isValidRxcui) {
-            throw new Exception("Invalid rxcui", JsonResponse::HTTP_BAD_REQUEST);
-        }
-
         try {
             $newData = $this->usersDrugRepository->create([
                 'user_id' => $userId,

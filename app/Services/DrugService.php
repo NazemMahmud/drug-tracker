@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Helpers\HttpHandler;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 use Exception;
@@ -34,16 +35,21 @@ class DrugService
      */
     public function searchDrugsDetails(string $drugName, int $limit): array
     {
-        try {
-            $drugInfo = $this->getDrugs($drugName);
-            $drugData = $this->extractDrugInfo($drugInfo, $drugName, $limit);
-            $details  = $this->getDrugDetails($drugData, $drugName);
-        } catch (Exception $ex) {
-            HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
-            throw new Exception("Error fetching drug information for $drugName", $ex->getCode());
-        }
+        $cacheKey = "drug_search:{$drugName}";
+        $ttl = config('cache.ttl.drug_search', 3600);
 
-        return $details;
+        return Cache::remember($cacheKey, $ttl, function () use ($drugName, $limit) {
+            try {
+                $drugInfo = $this->getDrugs($drugName);
+                $drugData = $this->extractDrugInfo($drugInfo, $drugName, $limit);
+                $details  = $this->getDrugDetails($drugData, $drugName);
+
+                return $details;
+            } catch (Exception $ex) {
+                HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
+                throw new Exception("Error fetching drug information for $drugName", $ex->getCode());
+            }
+        });
     }
 
     /**
@@ -203,21 +209,27 @@ class DrugService
             return false;
         }
 
-        try {
-            $url = sprintf(self::GET_DRUG_DETAILS_URL, $rxcui);
-            $response = Http::timeout(self::$timeout)->get($url);
+        $cacheKey = "rxcui:{$rxcui}";
+        $ttl = config('cache.ttl.drug_search', 3600);
 
-            if (!$response->successful()) {
+        return Cache::remember($cacheKey, $ttl, function () use ($rxcui) {
+            try {
+                $url = sprintf(self::GET_DRUG_DETAILS_URL, $rxcui);
+                $response = Http::timeout(self::$timeout)->get($url);
+
+                if (!$response->successful()) {
+                    return false;
+                }
+
+                $data       = $response->json();
+                $validRxcui = data_get($data, 'rxcuiStatusHistory.attributes.rxcui', '');
+                $tty        = data_get($data, 'rxcuiStatusHistory.attributes.tty', '');
+
+                return $rxcui === $validRxcui && !empty($tty);
+            } catch (Exception $ex) {
+                HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
                 return false;
             }
-        } catch (Exception $ex) {
-            HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
-            return false;
-        }
-
-        $data       = $response->json();
-        $validRxcui = data_get($data, 'rxcuiStatusHistory.attributes.rxcui', '');
-
-        return $rxcui === $validRxcui;
+        });
     }
 }

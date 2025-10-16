@@ -7,6 +7,7 @@ use App\Helpers\Constants;
 use App\Helpers\HttpHandler;
 use App\Http\Requests\AddDrugRequest;
 use App\Resources\UserDrugResource;
+use App\Services\DrugService;
 use App\Services\UsersDrugService;
 
 use Illuminate\Http\JsonResponse;
@@ -46,13 +47,16 @@ class UsersDrugController extends Controller
                 return HttpHandler::successMessage(Constants::USER_DRUG_EXIST);
             }
 
+            $isValidRxcui = DrugService::isValidRxcui($validated['rxcui']);
+            if (!$isValidRxcui) {
+                return HttpHandler::errorResponse(Constants::ERROR_INVALID_DRUG);
+            }
+
             $result   = $this->usersDrugService->addDrug($user->id, $validated['rxcui']);
             $resource = new UserDrugResource($result);
             return HttpHandler::successResponse($resource, JsonResponse::HTTP_CREATED);
         } catch (Exception $ex) {
-            dd($ex->getMessage());
             $statusCode = is_string($ex->getCode()) ? JsonResponse::HTTP_INTERNAL_SERVER_ERROR : $ex->getCode();
-            dd($statusCode);
             HttpHandler::errorLogMessageHandler($ex->getMessage(), $statusCode);
 
             return HttpHandler::errorResponse(Constants::ERROR_DB_CREATE, $statusCode);

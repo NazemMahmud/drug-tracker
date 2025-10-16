@@ -11,10 +11,6 @@ class DrugSearchTest extends TestCase
     private string $baseUrl;
     private string $drugName;
 
-    /**
-     * Pre-set test data before test methods call
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();

@@ -37,6 +37,7 @@ abstract class Constants
     public const USER_DRUG_EXIST     = 'This drug is already added for this user.';
     public const ERROR_DB_CREATE     = 'Failed to create record';
     public const ERROR_DB_DELETE     = 'Failed to delete record';
+    public const ERROR_INVALID_DRUG  = 'This is not a valid drug';
     public const SUCCESS_DRUG_ADD    = 'Drug added successfully for the user';
     public const USER_DRUG_NOT_FOUND = 'Drug not found in the users medication list';
     public const USER_DRUG_DELETED   = 'Drug removed from your medication list successfully';

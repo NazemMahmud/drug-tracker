@@ -3,38 +3,42 @@
 namespace Tests\Unit;
 
 use App\Helpers\Constants;
+
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
 class AddUserDrugTest extends TestCase
 {
-    /** API URL for store a new IP address */
     private string $baseUrl;
-
-    /** Authentication token */
     private string $token;
-
-    /** Test data for: successfully add mediation to user */
     private array $successData;
-
-    /** Test data for: missing field value */
     private array $missingData;
-
-    /** Test data for: data type mismatch for field value */
     private array $wrongDataType;
-
-    /** Test data for: rxcui data not found in national library DB */
     private array $invalidData;
 
-    /**
-     * Pre-set test data before test methods call
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();
 
-        // todo
+        $this->token   = Redis::get('test_access_token');
+        $this->baseUrl = env('APP_URL') . '/api/user/drugs';
+
+        $this->missingData = [
+            'rxcui' => '',
+        ];
+
+        $this->wrongDataType = [
+            'rxcui' => 997484,
+        ];
+
+        $this->invalidData = [
+            'rxcui' => '001'
+        ];
+
+        $this->successData = [
+            'rxcui' => '997484',
+        ];
     }
 
     /**
@@ -42,7 +46,11 @@ class AddUserDrugTest extends TestCase
      */
     public function test_invalid_token()
     {
-        // todo
+        $response = $this->postJson($this->baseUrl, $this->successData);
+        $response->assertStatus(JsonResponse::HTTP_NOT_FOUND)
+            ->assertJsonStructure(['data', 'message', 'status'])
+            ->assertJsonPath('status', Constants::FAILED)
+            ->assertJsonPath('message', Constants::TOKEN_NOT_FOUND);
     }
 
     /**
@@ -50,7 +58,12 @@ class AddUserDrugTest extends TestCase
      */
     public function test_value_missing()
     {
-        // todo
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
+            ->postJson($this->baseUrl, $this->missingData);
+
+        $response->assertJsonStructure(['data', 'message', 'status'])
+            ->assertJsonPath('status', Constants::FAILED)
+            ->assertJsonPath('message', 'The drug rxcui field is required.');
 
     }
 
@@ -59,7 +72,12 @@ class AddUserDrugTest extends TestCase
      */
     public function test_data_type_mismatch()
     {
-        // todo
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
+            ->postJson($this->baseUrl, $this->wrongDataType);
+
+        $response->assertJsonStructure(['data', 'message', 'status'])
+            ->assertJsonPath('status', Constants::FAILED)
+            ->assertJsonPath('message', 'The drug rxcui value must be a valid string.');
     }
 
     /**
@@ -67,15 +85,29 @@ class AddUserDrugTest extends TestCase
      */
     public function test_invalid_data()
     {
-        // todo
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
+            ->postJson($this->baseUrl, $this->invalidData);
+
+        $response->assertStatus(JsonResponse::HTTP_BAD_REQUEST)
+            ->assertJsonStructure(['data', 'message', 'status'])
+            ->assertJsonPath('status', Constants::FAILED)
+            ->assertJsonPath('message', Constants::ERROR_INVALID_DRUG);
     }
 
     /**
      * Test 5: successfully added
      */
-    public function test_success_search()
+    public function test_success_add_drug()
     {
-        // todo
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
+            ->postJson($this->baseUrl, $this->successData);
+
+        $response->assertStatus(JsonResponse::HTTP_CREATED)
+            ->assertJsonStructure([
+                'data' => ['id', 'user_id', 'rxcui'],
+                'status'
+            ])
+            ->assertJsonPath('status', Constants::SUCCESS);
     }
 
     /**
@@ -83,6 +115,15 @@ class AddUserDrugTest extends TestCase
      */
     public function test_already_added()
     {
-        // todo
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
+            ->postJson($this->baseUrl, $this->successData);
+
+        $response->assertStatus(JsonResponse::HTTP_OK)
+            ->assertJsonStructure([
+                'data' => ['message'],
+                'status'
+            ])
+            ->assertJsonPath('status', Constants::SUCCESS)
+            ->assertJsonPath('data.message', Constants::USER_DRUG_EXIST);
     }
 }
