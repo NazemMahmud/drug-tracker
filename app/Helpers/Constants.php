@@ -16,6 +16,8 @@ abstract class Constants
     public const EXPIRED_TOKEN        = 'Token is Expired';
     public const TOKEN_NOT_FOUND      = 'Token not found';
 
+    public const ERROR_TOO_MANY_REQUEST = 'Too many search requests. Please try again later.';
+
     /**
      * Registration related
      */
