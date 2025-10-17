@@ -1,29 +1,24 @@
 <?php
 
-use App\Http\Controllers\{ AuthController, DrugsController };
+use App\Http\Controllers\{ AuthController, DrugsController, UsersDrugController };
+use App\Http\Middleware\JWTMiddleware;
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
 
-/**
- * todo: remove at the end of project tasks
- */
-Route::get('/health', function () {
-    try {
-        DB::connection()->getPdo();
-        $databaseStatus = 'connected';
-    } catch (\Exception $e) {
-        $databaseStatus = 'disconnected';
-    }
-    return response()->json([
-        'status' => 'healthy',
-        'service' => 'Drug Tracker API',
-        'timestamp' => now()->toIso8601String(),
-        'database' => $databaseStatus,
-    ]);
+
+Route::middleware(['throttle:auth'])->group(function () {
+    Route::post('register', [AuthController::class, 'registration']);
+    Route::post('login', [AuthController::class, 'login']);
 });
 
-Route::post('register', [AuthController::class, 'registration'])->name('register');
-Route::post('login', [AuthController::class, 'login'])->name('login');
+Route::middleware(['throttle:drug-search'])->group(function () {
+    Route::get('drug-search', [DrugsController::class, 'searchDrugs']);
+});
 
-Route::get('drug-search', [DrugsController::class, 'searchDrugs'])->name('drug-search');
+Route::middleware([JWTMiddleware::class, 'throttle:user-drugs'])->prefix('user')->group(function () {
+    Route::controller(UsersDrugController::class)->prefix('drugs')->group(function () {
+        Route::post('/', 'store');
+        Route::get('/', 'index');
+        Route::delete('/{rxcui}', 'destroy');
+    });
+});

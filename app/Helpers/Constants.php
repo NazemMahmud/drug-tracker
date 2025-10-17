@@ -16,6 +16,8 @@ abstract class Constants
     public const EXPIRED_TOKEN        = 'Token is Expired';
     public const TOKEN_NOT_FOUND      = 'Token not found';
 
+    public const ERROR_TOO_MANY_REQUEST = 'Too many search requests. Please try again later.';
+
     /**
      * Registration related
      */
@@ -28,4 +30,16 @@ abstract class Constants
      * Drug search related
      */
     public const ERROR_DRUG_NAME_REQUIRED = 'Drug name is required.';
+
+    /**
+     * Users drugs related
+     */
+    public const USER_DRUG_EXIST     = 'This drug is already added for this user.';
+    public const ERROR_DB_CREATE     = 'Failed to create record';
+    public const ERROR_DB_DELETE     = 'Failed to delete record';
+    public const ERROR_INVALID_DRUG  = 'This is not a valid drug';
+    public const SUCCESS_DRUG_ADD    = 'Drug added successfully for the user';
+    public const USER_DRUG_NOT_FOUND = 'Drug not found in the users medication list';
+    public const USER_DRUG_DELETED   = 'Drug removed from your medication list successfully';
+    public const ERROR_DB_READ       = 'Failed to retrieve records';
 }

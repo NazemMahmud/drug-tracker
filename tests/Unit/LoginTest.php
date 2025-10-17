@@ -5,30 +5,18 @@ namespace Tests\Unit;
 use App\Helpers\Constants;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
 
 class LoginTest extends TestCase
 {
-    /** API URL for login */
     private string $loginUrl;
-
-    /** Test data for: form validation error */
     private array $invalidData;
-
-    /** Test data for: validation error for incorrect email */
     private array $invalidEmailData;
-
-    /** Test data for: validation errors for incorrect password */
     private array $invalidPasswordData;
-
-    /** Test data for: successfully register a new user */
     private array $successRequestData;
 
-    /**
-     * Pre-set test data before test methods call
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -110,6 +98,8 @@ class LoginTest extends TestCase
                 'status'
             ])->assertJsonPath('status', Constants::SUCCESS);
 
-        // todo: add in redis later for testing purpose
+
+        Redis::set('test_access_token', $response->json('data.access_token'));
+        Redis::expire('test_access_token', 3600);
     }
 }

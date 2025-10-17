@@ -10,25 +10,12 @@ use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
-
-    /** API URL for registration */
     private string $registrationUrl;
-
-    /** Test data for: validation error for incorrect name */
     private array $invalidNameData;
-
-    /** Test data for: validation error for incorrect email */
     private array $invalidEmailData;
-
-    /** Test data for: validation errors for incorrect password */
     private array $invalidPasswordData;
-
-    /** Test data for: successfully register a new user */
     private array $validUserData;
-    /**
-     * Pre-set test data before test methods call
-     * @return void
-     */
+
     protected function setUp(): void
     {
         parent::setUp();
