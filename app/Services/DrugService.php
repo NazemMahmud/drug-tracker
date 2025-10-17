@@ -13,7 +13,7 @@ use Exception;
 
 class DrugService
 {
-    protected static int $timeout = 100;
+    protected static int $timeout = 1000;
     protected string $tty  = 'SBD';
 
     protected CONST GET_DRUGS_URL        = 'https://rxnav.nlm.nih.gov/REST/drugs.json?name=%s';
@@ -144,6 +144,35 @@ class DrugService
         }
 
         return $result;
+    }
+
+    public function fetchSingleDrugDetails(string $rxcui): ?array
+    {
+        $cacheKey = "drug_details:{$rxcui}";
+        $ttl = config('cache.ttl.drug_details', 86400);
+
+        return Cache::remember($cacheKey, $ttl, function () use ($rxcui) {
+            try {
+                $url = sprintf(self::GET_DRUG_DETAILS_URL, $rxcui);
+                $response = Http::timeout(self::$timeout)->get($url);
+
+                if (!$response->successful()) {
+                    throw new Exception("Failed to fetch drug details for rxcui: {$rxcui}");
+                }
+
+                $details = $response->json();
+
+                return [
+                    'rxcui'                 => $rxcui,
+                    'name'                  => data_get($details, 'rxcuiStatusHistory.attributes.name', ''),
+                    'base_names'            => $this->extractBaseNames($details),
+                    'dose_form_group_names' => $this->extractDoseFormGroups($details),
+                ];
+            } catch (Exception $ex) {
+                HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
+                throw $ex;
+            }
+        });
     }
 
     public function fetchDrugDetailsPool(array $rxcuiList): array

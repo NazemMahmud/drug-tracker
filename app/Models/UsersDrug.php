@@ -29,4 +29,9 @@ class UsersDrug extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function drug(): BelongsTo
+    {
+        return $this->belongsTo(Drug::class, 'rxcui', 'rxcui');
+    }
 }

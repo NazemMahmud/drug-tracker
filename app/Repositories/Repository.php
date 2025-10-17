@@ -53,4 +53,14 @@ abstract class Repository
     {
         return $this->model->where($conditions)->update($data);
     }
+
+    public function firstOrCreateBy(array $conditions, array $data): Model
+    {
+        return $this->model->firstOrCreate(
+            $conditions,
+            $data
+        );
+    }
+
+
 }
