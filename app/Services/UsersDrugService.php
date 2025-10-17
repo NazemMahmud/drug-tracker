@@ -34,8 +34,8 @@ class UsersDrugService
                 'rxcui'   => $rxcui,
                 'trace'   => $ex->getTraceAsString()
             ];
-            HttpHandler::errorHandler('Error adding drug: ' . $ex->getMessage(), $errorData);
 
+            HttpHandler::errorHandler('Error adding drug: ' . $ex->getMessage(), $errorData);
             throw new Exception(Constants::ERROR_DB_CREATE, JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -68,9 +68,6 @@ class UsersDrugService
         }
     }
 
-    /**
-     * todo: not completed
-     */
     public function getUserDrugs(int $userId): array
     {
         try {
@@ -80,36 +77,20 @@ class UsersDrugService
                 return [];
             }
 
-            $drugsWithDetails = [];
-//            $data = [
-//                ['rxcui'] => '',
-//                ['rxcui'] => '',
-//                ['rxcui'] => '',
-//                ['rxcui'] => '',
-//            ];
+            $rxcuiList = $userDrugs->map(function ($drug) {
+                return ['rxcui' => $drug['rxcui']];
+            })->toArray();
 
-            foreach ($userDrugs as $userDrug) {
-                // Fetch drug details from National Library of Medicine API
-                $drugDetails = $this->drugService->getDrugDetails($userDrug->rxcui);
-
-                if ($drugDetails) {
-                    $drugsWithDetails[] = [
-                        'id' => $userDrug->id,
-                        'rxcui' => $userDrug->rxcui,
-                        'drug_name' => $drugDetails['name'] ?? null,
-                        'base_names' => $drugDetails['ingredientAndStrength'] ?? null,
-                        'dose_form_group_name' => $drugDetails['doseFormGroupConcept'] ?? null,
-                        'added_at' => $userDrug->created_at,
-                    ];
-                }
-            }
-
-            return $drugsWithDetails;
+            $drugDetailsList = $this->drugService->getDrugDetails($rxcuiList);
+            return $drugDetailsList;
         } catch (Exception $ex) {
-            Log::error('Error fetching user drugs: ' . $ex->getMessage(), [
-                'user_id' => $userId,
-                'trace' => $ex->getTraceAsString()
-            ]);
+            HttpHandler::errorHandler(
+                'Error fetching user drugs: ' . $ex->getMessage(),
+                [
+                    'user_id' => $userId,
+                    'trace' => $ex->getTraceAsString()
+                ]
+            );
             throw new Exception(Constants::ERROR_DB_READ, JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

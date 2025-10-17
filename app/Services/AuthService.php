@@ -39,9 +39,4 @@ class AuthService
             throw new Exception(Constants::ERROR_DB, JsonResponse::HTTP_BAD_REQUEST);
         }
     }
-
-    public function login(string $email, string $password)
-    {
-        // todo
-    }
 }

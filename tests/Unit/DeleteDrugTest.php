@@ -39,7 +39,7 @@ class DeleteDrugTest extends TestCase
     /**
      * Test 2: invalid rxcui from library DB
      */
-    public function test_medicine_not_for_user()
+    public function test_drug_not_for_user()
     {
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->token])
             ->deleteJson($this->baseUrl . $this->notFoundData);

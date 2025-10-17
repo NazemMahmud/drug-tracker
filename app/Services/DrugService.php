@@ -36,13 +36,13 @@ class DrugService
     public function searchDrugsDetails(string $drugName, int $limit): array
     {
         $cacheKey = "drug_search:{$drugName}";
-        $ttl = config('cache.ttl.drug_search', 3600);
+        $ttl      = config('cache.ttl.drug_search', 3600);
 
         return Cache::remember($cacheKey, $ttl, function () use ($drugName, $limit) {
             try {
                 $drugInfo = $this->getDrugs($drugName);
-                $drugData = $this->extractDrugInfo($drugInfo, $drugName, $limit);
-                $details  = $this->getDrugDetails($drugData, $drugName);
+                $drugData = $this->extractDrugInfo($drugInfo, $limit);
+                $details  = $this->getDrugDetails($drugData);
 
                 return $details;
             } catch (Exception $ex) {
@@ -83,7 +83,7 @@ class DrugService
      * @param int $limit
      * @return array
      */
-    public function extractDrugInfo(array $drugInfo, string $drugName, int $limit): array
+    public function extractDrugInfo(array $drugInfo, int $limit): array
     {
         $conceptGroups = data_get($drugInfo, 'drugGroup.conceptGroup', []);
         if (empty($conceptGroups)) return [];
@@ -99,49 +99,45 @@ class DrugService
             }
         }
 
-
         return [];
     }
 
     /**
      * from history API get base name and Dosage form
      */
-    public function getDrugDetails(array $drugData, string $drugName): array
+    public function getDrugDetails(array $drugData): array
     {
         if (empty($drugData)) {
             return [];
         }
 
         $details = $this->fetchDrugDetailsPool($drugData);
-        $result  = $this->filterDrugDetailsData($details, $drugData, $drugName);
+        $result  = $this->filterDrugDetailsData($details, $drugData);
 
         return $result;
     }
 
-    public function filterDrugDetailsData(array $responses, array $drugData, string $drugName = ''): array
+    public function filterDrugDetailsData(array $responses, array $drugData): array
     {
         $result = [];
-//        Rx ID, Drug name, baseNames (ingredientAndStrength), doseFormGroupName (doseFormGroupConcept).
+
         foreach ($responses as $index => $response) {
             $drug = $drugData[$index];
             $rxcui = $drug['rxcui'];
 
             if ($response->successful()) {
                 $details = $response->json();
-                // todo: have some queries, after that will reformat again
                 $result[] = [
                     'rxcui'                 => $rxcui,
                     'name'                  => $drug['name'] ?? data_get($details, 'rxcuiStatusHistory.attributes.name', ''),
-                    'drug_name'             => $drugName, //
                     'base_names'            => $this->extractBaseNames($details),
                     'dose_form_group_names' => $this->extractDoseFormGroups($details),
                 ];
             } else {
                 $errorMessage = "Failed to fetch drug details: ";
                 $errorData = [
-                    'drug_name' => $drugName,
-                    'rxcui'     => $rxcui,
-                    'status'    => $response->status(),
+                    'rxcui'  => $rxcui,
+                    'status' => $response->status(),
                 ];
                 HttpHandler::errorHandler($errorMessage, $errorData);
             }
@@ -156,9 +152,6 @@ class DrugService
             return [];
         }
 
-        /**
-         * i need array of [rxcui]
-         */
         $responses = Http::pool(function ($pool) use ($rxcuiList) {
             $promises = [];
             foreach ($rxcuiList as $index => $drug) {
@@ -223,9 +216,9 @@ class DrugService
 
                 $data       = $response->json();
                 $validRxcui = data_get($data, 'rxcuiStatusHistory.attributes.rxcui', '');
-                $tty        = data_get($data, 'rxcuiStatusHistory.attributes.tty', '');
+                $name       = data_get($data, 'rxcuiStatusHistory.attributes.name', '');
 
-                return $rxcui === $validRxcui && !empty($tty);
+                return $rxcui === $validRxcui && !empty($name);
             } catch (Exception $ex) {
                 HttpHandler::errorLogMessageHandler($ex->getMessage(), $ex->getCode());
                 return false;
